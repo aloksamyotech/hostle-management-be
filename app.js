@@ -47,5 +47,5 @@ app.use(
 
 const port = process.env.PORT || "4000";
 app.listen(port, () => {
-  console.log(`Server listining at http://localhost:${port}`);
+  console.log(`Server listining  okk  at http://localhost:${port}`);
 });
