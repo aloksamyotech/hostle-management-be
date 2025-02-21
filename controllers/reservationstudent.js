@@ -79,7 +79,7 @@ const add = async (req, res) => {
       return res.status(404).json({ message: "Room not found." });
     }
 
-    if (!room.bedIDs.includes(bedId)) {
+    if (!room.bedIDs.some((bed) => bed.bedId === bedId)) {
       return res.status(400).json({ message: "Invalid Bed ID for this room." });
     }
 
@@ -115,6 +115,10 @@ const add = async (req, res) => {
     console.log("newStudentReserve ==========>", newStudentReserve);
 
     await newStudentReserve.save();
+    await Room.updateOne(
+      { roomNumber: roomNumber, "bedIDs.bedId": bedId },
+      { $set: { "bedIDs.$.active": false } }
+    );
     res.status(201).json({ message: "Reservation successful!" });
   } catch (error) {
     console.log("Error Found =>", error);

@@ -5,9 +5,11 @@ import Hostel from "../model/Hostel.js";
 import StudentReservation from "../model/StudentReservation.js";
 import { v4 as uuidv4 } from "uuid";
 import Roomtype from "../model/type.js";
+
 const add = async (req, res) => {
   try {
     const { roomNumber, roomType } = req.body;
+    console.log("rohit malviya=============================", req.body);
 
     const existingRoom = await Room.findOne({ roomNumber });
     if (existingRoom) {
@@ -15,7 +17,6 @@ const add = async (req, res) => {
     }
 
     const fileNames = req.files.map((file) => file.filename);
-
     const normalizedRoomType = roomType.trim().toLowerCase();
 
     const bedMapping = {
@@ -43,9 +44,10 @@ const add = async (req, res) => {
 
     const numOfBeds = bedMapping[normalizedRoomType] || 0;
 
+    // ✅ Change bedIDs to an array of objects (bedId + active)
     const bedIDs = [];
     for (let i = 0; i < numOfBeds; i++) {
-      bedIDs.push(uuidv4());
+      bedIDs.push({ bedId: uuidv4(), active: true }); // ✅ Each bed has active: true
     }
 
     const roomData = new Room({
@@ -53,7 +55,7 @@ const add = async (req, res) => {
       roomType,
       numOfBeds,
       availableBeds: numOfBeds,
-      bedIDs,
+      bedIDs, // ✅ Now storing as an array of objects
       roomphoto: fileNames,
       createdBy: req.params.id,
     });

@@ -6,7 +6,12 @@ const RoomSchema = new mongoose.Schema({
   numOfBeds: { type: Number, required: true },
   occupiedBeds: { type: Number, required: true, default: 0 },
   availableBeds: { type: Number, required: true },
-  bedIDs: { type: [String], required: true }, // Array of unique IDs for each bed
+  bedIDs: [
+    {
+      bedId: { type: String, required: true },
+      active: { type: Boolean, default: true }, // Default active true for each bed
+    },
+  ],
   roomphoto: { type: [String], required: true },
   deleted: { type: Boolean, default: false },
   createdBy: {
