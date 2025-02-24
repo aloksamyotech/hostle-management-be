@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const RoomSchema = new mongoose.Schema({
-  roomNumber: { type: Number, required: true, unique: true },
+  roomNumber: { type: String, required: true, unique: true },
   roomType: { type: String, required: true },
   numOfBeds: { type: Number, required: true },
   occupiedBeds: { type: Number, required: true, default: 0 },
@@ -9,7 +9,8 @@ const RoomSchema = new mongoose.Schema({
   bedIDs: [
     {
       bedId: { type: String, required: true },
-      active: { type: Boolean, default: true }, // Default active true for each bed
+      active: { type: Boolean, default: true },
+      studentName: { type: String, default: null },
     },
   ],
   roomphoto: { type: [String], required: true },

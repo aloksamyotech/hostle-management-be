@@ -83,6 +83,16 @@ const add = async (req, res) => {
       return res.status(400).json({ message: "Invalid Bed ID for this room." });
     }
 
+    await Room.updateOne(
+      { roomNumber: roomNumber, createdBy: req.params.id },
+      {
+        $inc: {
+          occupiedBeds: 1,
+          availableBeds: -1,
+        },
+      }
+    );
+
     const newStudentReserve = new StudentReservation({
       studentName,
       studentPhoneNo,
@@ -117,8 +127,14 @@ const add = async (req, res) => {
     await newStudentReserve.save();
     await Room.updateOne(
       { roomNumber: roomNumber, "bedIDs.bedId": bedId },
-      { $set: { "bedIDs.$.active": false } }
+      {
+        $set: {
+          "bedIDs.$.studentName": studentName,
+          "bedIDs.$.active": false,
+        },
+      }
     );
+
     res.status(201).json({ message: "Reservation successful!" });
   } catch (error) {
     console.log("Error Found =>", error);

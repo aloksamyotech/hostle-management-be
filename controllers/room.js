@@ -44,10 +44,9 @@ const add = async (req, res) => {
 
     const numOfBeds = bedMapping[normalizedRoomType] || 0;
 
-    // ✅ Change bedIDs to an array of objects (bedId + active)
     const bedIDs = [];
     for (let i = 0; i < numOfBeds; i++) {
-      bedIDs.push({ bedId: uuidv4(), active: true }); // ✅ Each bed has active: true
+      bedIDs.push({ bedId: uuidv4(), active: true });
     }
 
     const roomData = new Room({
@@ -55,7 +54,7 @@ const add = async (req, res) => {
       roomType,
       numOfBeds,
       availableBeds: numOfBeds,
-      bedIDs, // ✅ Now storing as an array of objects
+      bedIDs,
       roomphoto: fileNames,
       createdBy: req.params.id,
     });
@@ -121,18 +120,19 @@ const view = async (req, res) => {
     }
 
     const studentReservations = await StudentReservation.find({
-      bedId: { $in: room.bedIDs },
+      bedId: { $in: room.bedIDs.map((bed) => bed.bedId) },
       status: "active",
     });
 
     console.log("Student Reservations:", studentReservations);
 
-    const bedBookings = room.bedIDs.map((bedId) => {
-      const student = studentReservations.find((s) => s.bedId === bedId);
+    const bedBookings = room.bedIDs.map((bed) => {
+      const student = studentReservations.find((s) => s.bedId === bed.bedId);
       return {
-        bedId,
+        bedId: bed.bedId,
         studentName: student ? student.studentName : null,
         id: student ? student._id : null,
+        active: bed.active,
       };
     });
 
@@ -148,9 +148,10 @@ const view = async (req, res) => {
       createdBy: room.createdBy,
     };
 
-    res
-      .status(200)
-      .json({ result: response, message: "Room data found successfully." });
+    res.status(200).json({
+      result: response,
+      message: "Room data found successfully.",
+    });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ message: "Internal Server Error" });
