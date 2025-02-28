@@ -43,37 +43,49 @@ const add = async (req, res) => {
       ? req.files.aadharcardphoto[0].filename
       : null;
 
-    const existingReservation = await StudentReservation.findOne({
-      bedId,
-      status: "active",
-    });
-
-    if (existingReservation) {
-      return res.status(400).json({ message: "This bed is already booked." });
-    }
-
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const totalMonths =
+
+    const startDay = start.getDate();
+    const daysInStartMonth = new Date(
+      start.getFullYear(),
+      start.getMonth() + 1,
+      0
+    ).getDate();
+    const remainingDays = daysInStartMonth - startDay + 1;
+
+    let totalMonths =
       (end.getFullYear() - start.getFullYear()) * 12 +
       (end.getMonth() - start.getMonth()) +
       1;
 
-    console.log("totalMonths==>", totalMonths);
+    console.log("Total Months==>", totalMonths);
 
     const MonthlyTotalAmmount =
       Number(libraryAmount) + Number(foodAmount) + Number(hostelRent);
-    console.log("MonthlyTotalAmmount ==>", MonthlyTotalAmmount);
+    console.log("Monthly Total Amount ==>", MonthlyTotalAmmount);
 
-    const totalAmount = MonthlyTotalAmmount * totalMonths;
-    console.log("totalAmount==>", totalAmount);
+    let firstMonthCharge = MonthlyTotalAmmount;
+
+    if (startDay > 16) {
+      console.log(" Student joined after 16th, calculating daily rate.");
+
+      const dailyRate = MonthlyTotalAmmount / daysInStartMonth;
+      firstMonthCharge = dailyRate * remainingDays;
+    } else {
+      console.log(" Student joined before 16th, full month charge applied.");
+    }
+
+    const totalAmount =
+      firstMonthCharge + MonthlyTotalAmmount * (totalMonths - 1);
+    console.log("Total Amount==>", totalAmount);
 
     const room = await Room.findOne({
       roomNumber: roomNumber,
       createdBy: req.params.id,
     });
 
-    console.log("room =>", room);
+    console.log("Room =>", room);
 
     if (!room) {
       return res.status(404).json({ message: "Room not found." });
@@ -122,7 +134,7 @@ const add = async (req, res) => {
       createdBy: req.params.id,
     });
 
-    console.log("newStudentReserve ==========>", newStudentReserve);
+    console.log("New Student Reservation ==========>", newStudentReserve);
 
     await newStudentReserve.save();
     await Room.updateOne(

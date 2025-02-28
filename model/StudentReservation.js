@@ -13,7 +13,7 @@ const studentReservationSchema = new mongoose.Schema({
   city: { type: String, required: true },
   address: { type: String, required: true },
   aadharcardphoto: { type: String, required: true },
-  roomNumber: { type: Number, required: true },
+  roomNumber: { type: String, required: true },
   bedId: { type: String, required: true },
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },
