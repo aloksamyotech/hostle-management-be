@@ -86,7 +86,6 @@ const add = async (req, res) => {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    console.log(" Student Data Found:", studentData);
     let studentId = studentData._id;
     let studentPhoneNo = studentData.studentPhoneNo;
     let advancePayment = Number(studentData.advancePayment) || 0;
@@ -122,7 +121,7 @@ const add = async (req, res) => {
         0
       ).getDate();
 
-      if (startDay > 1) {
+      if (startDay > 16) {
         const dailyRate = baseMonthlyAmount / daysInMonth;
         let remainingDays = daysInMonth - startDay + 1;
         adjustedMonthlyAmount = Math.round(dailyRate * remainingDays);
@@ -137,28 +136,31 @@ const add = async (req, res) => {
       paymentDate: -1,
     });
 
-    let monthlyPending = adjustedMonthlyAmount - actualPaymentAmount;
-    let totalPending = adjustedMonthlyAmount - actualPaymentAmount;
+    let monthlyPending;
+    let totalPending;
 
     if (latestPayment) {
-      console.log(" Latest Payment Data =>", latestPayment);
+      console.log("Latest Payment Data =>", latestPayment);
 
-      monthlyPending = Math.max(
-        0,
-        latestPayment.monthlyPending +
-          (adjustedMonthlyAmount - actualPaymentAmount)
-      );
-      totalPending = Math.max(latestPayment.totalPending - actualPaymentAmount);
+      if (latestPayment.month === month) {
+        monthlyPending = latestPayment.monthlyPending - actualPaymentAmount;
+      } else {
+        monthlyPending =
+          adjustedMonthlyAmount -
+          actualPaymentAmount +
+          Math.min(0, latestPayment.monthlyPending);
+      }
+
+      totalPending = latestPayment.totalPending - actualPaymentAmount;
     } else {
-      console.log(" First Payment, Deducting Advance Payment");
-      console.log("advance payment ========================", advancePayment);
-
-      monthlyPending = Math.max(monthlyPending - advancePayment);
-      actualPaymentAmount = actualPaymentAmount + advancePayment;
+      monthlyPending =
+        adjustedMonthlyAmount - actualPaymentAmount - advancePayment;
+      actualPaymentAmount += advancePayment;
+      totalPending = adjustedMonthlyAmount - actualPaymentAmount;
     }
 
-    console.log(" Monthly Pending =>", monthlyPending);
-    console.log(" Total Pending =>", totalPending);
+    console.log("Monthly Pending =>", monthlyPending);
+    console.log("Total Pending =>", totalPending);
 
     const newPayment = new Payment({
       studentId,
