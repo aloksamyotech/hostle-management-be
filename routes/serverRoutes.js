@@ -16,7 +16,7 @@ import ExpenditureRoute from "./expenseRoutes.js";
 import NoticeBoardRoute from "./noticeBoardRoutes.js";
 import WeeklyFoodMenuRoute from "./weeklyFoodMenuRoutes.js";
 import StudentPaymentRoute from "./studentPaymentRoutes.js";
-
+import Email from "./sendmailRouter.js";
 router.use("/administrator", AdministratorRoute);
 router.use("/hostel", HostelRoute);
 router.use("/student", StudentRoute);
@@ -32,5 +32,6 @@ router.use("/expense", ExpenditureRoute);
 router.use("/notice_board", NoticeBoardRoute);
 router.use("/weeklyfoodmenu", WeeklyFoodMenuRoute);
 router.use("/student_payment", StudentPaymentRoute);
+router.use("/email", Email);
 
 export default router;

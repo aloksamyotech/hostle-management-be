@@ -3,97 +3,137 @@ import Hostel from "../model/Hostel.js";
 import messages from "../constants/message.js";
 import User from "../model/User.js";
 
-const add = async(req,res) => {
-    console.log("in noticeboard controller..");
-    console.log("req id=>",req.params.id);
-    console.log("req data=>",req.body);
+import BlockedRole from "../model/Email_shema.js";
+import StudentReservation from "../model/StudentReservation.js";
+import { noticeEmailTemplate } from "../Templates/noticboard.js";
+import { sendEmail } from "../controllers/Sendmail.js";
 
-    try{
-        const { noticeTitle, description, dateTime } = req.body;
-        
-        const newNotice = new NoticeBoard({
-            noticeTitle,
-            description,
-            dateTime,
-            createdBy : req.params.id
-        });
-        await newNotice.save();
-        console.log("newNotice=>",newNotice);
-        res.status(201).json({message : messages.DATA_SUBMITED_SUCCESS});
-    }catch(error){
-        res.status(500).json({message : messages.INTERNAL_SERVER_ERROR});
-    }
-}
+const add = async (req, res) => {
+  console.log("in noticeboard controller..");
+  console.log("req id=>", req.params.id);
+  console.log("req data=>", req.body);
 
-const index = async (req,res) => {
-    console.log("in noticeboard controller..");
-    console.log("Id==>",req.params.id);
+  try {
+    const { noticeTitle, description, dateTime } = req.body;
 
-    try{
-        let result = await NoticeBoard.find({createdBy : req.params.id, deleted : false});
-        console.log("Results=>",result);
+    const newNotice = new NoticeBoard({
+      noticeTitle,
+      description,
+      dateTime,
+      createdBy: req.params.id,
+    });
 
-        let total_recodes = await NoticeBoard.countDocuments({createdBy : req.params.id, deleted : false});
-        console.log("total_recodes==>",total_recodes);
-        
-        res.status(200).send({ result, totalRecodes: total_recodes, message : messages.DATA_FOUND_SUCCESS });
+    await newNotice.save();
 
-    }catch(error){
-        console.log("Error =>", error);
-        res.status(500).json({ message: messages.INTERNAL_SERVER_ERROR });
+    const usersToNotify = await StudentReservation.find({
+      createdBy: req.params.id,
+    }).select("email");
 
-    }   
-}
+    if (usersToNotify.length > 0) {
+      console.log("Users to notify: ", usersToNotify);
 
-const view = async (req,res) => {
-    console.log("in noticeboard controller..");
-    console.log("Id : ",req.params.id );
-
-    let result = await NoticeBoard.findById({_id : req.params.id});
-
-    if(!result){
-        res.status(400).json({message : 'data is not found'});
-    }else{
-        res.status(200).json(result);
-    }
-}
-
-const edit = async (req,res) => {
-    console.log("in noticeboard controller..");
-    console.log("Id : ",req.params.id );
-
-    try{
-        let result = await NoticeBoard.updateOne(
-            {_id : req.params.id},
-            {
-                $set : {
-                    noticeTitle : req.body.noticeTitle,
-                    description : req.body.description,
-                    dateTime : req.body.dateTime,
-                }
-            }
+      for (let user of usersToNotify) {
+        const emailContent = noticeEmailTemplate(
+          user.email,
+          newNotice.noticeTitle,
+          newNotice.description,
+          newNotice.dateTime
         );
-        res.status(200).json({result, message : messages.DATA_UPDATED_SUCCESS});
-    }catch(error){
-        console.log("Found Error While Update", error);
-        res.status(400).json({message : messages.DATA_UPDATED_FAILED});
+      }
+    } else {
+      console.log("No users found to notify.");
     }
-}
 
-const deleteData = async (req,res) => {
-    try{
-        console.log("Id:",req.params.id);
-        const result = await NoticeBoard.findById({_id : req.params.id});
-        if(!result){
-          return res.status(404).json({message :' data is not found !!'});
-        }else{
-          await NoticeBoard.findByIdAndUpdate({_id : req.params.id},{deleted : true});
-          console.log("Data deleted successfully !!");
-          res.json({message : "Data deleted successfully !!"});
-        }
-      }catch(error){
-        res.status(404).json({message : "Error Found",error});
+    console.log("newNotice=>", newNotice);
+    res
+      .status(201)
+      .json({ message: "Notice submitted and email sent successfully!" });
+  } catch (error) {
+    console.log("Error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const index = async (req, res) => {
+  console.log("in noticeboard controller..");
+  console.log("Id==>", req.params.id);
+
+  try {
+    let result = await NoticeBoard.find({
+      createdBy: req.params.id,
+      deleted: false,
+    });
+    console.log("Results=>", result);
+
+    let total_recodes = await NoticeBoard.countDocuments({
+      createdBy: req.params.id,
+      deleted: false,
+    });
+    console.log("total_recodes==>", total_recodes);
+
+    res.status(200).send({
+      result,
+      totalRecodes: total_recodes,
+      message: messages.DATA_FOUND_SUCCESS,
+    });
+  } catch (error) {
+    console.log("Error =>", error);
+    res.status(500).json({ message: messages.INTERNAL_SERVER_ERROR });
+  }
+};
+
+const view = async (req, res) => {
+  console.log("in noticeboard controller..");
+  console.log("Id : ", req.params.id);
+
+  let result = await NoticeBoard.findById({ _id: req.params.id });
+
+  if (!result) {
+    res.status(400).json({ message: "data is not found" });
+  } else {
+    res.status(200).json(result);
+  }
+};
+
+const edit = async (req, res) => {
+  console.log("in noticeboard controller..");
+  console.log("Id : ", req.params.id);
+
+  try {
+    let result = await NoticeBoard.updateOne(
+      { _id: req.params.id },
+      {
+        $set: {
+          noticeTitle: req.body.noticeTitle,
+          description: req.body.description,
+          dateTime: req.body.dateTime,
+        },
+      }
+    );
+    res.status(200).json({ result, message: messages.DATA_UPDATED_SUCCESS });
+  } catch (error) {
+    console.log("Found Error While Update", error);
+    res.status(400).json({ message: messages.DATA_UPDATED_FAILED });
+  }
+};
+
+const deleteData = async (req, res) => {
+  try {
+    console.log("Id:", req.params.id);
+    const result = await NoticeBoard.findById({ _id: req.params.id });
+    if (!result) {
+      return res.status(404).json({ message: " data is not found !!" });
+    } else {
+      await NoticeBoard.findByIdAndUpdate(
+        { _id: req.params.id },
+        { deleted: true }
+      );
+      console.log("Data deleted successfully !!");
+      res.json({ message: "Data deleted successfully !!" });
     }
-}
+  } catch (error) {
+    res.status(404).json({ message: "Error Found", error });
+  }
+};
 
-export default { add, index,view,edit,deleteData};
+export default { add, index, view, edit, deleteData };

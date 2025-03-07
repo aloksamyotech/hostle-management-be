@@ -2,6 +2,7 @@ import Hostel from "../model/Hostel.js";
 import messages from "../constants/message.js";
 import User from "../model/User.js";
 import SuperAdmin from "../model/SuperAdmin.js";
+import jwt from "jsonwebtoken";
 const add = async (req, res) => {
   console.log("In hostel controller");
   console.log("Data =>", req.body);
@@ -201,6 +202,44 @@ const bedsCount = async (req, res) => {
   }
 };
 
+const updatePassword = async (req, res) => {
+  console.log("Update password controller");
+
+  try {
+    const { token, newPassword } = req.body;
+    console.log("req.body=======================", req.body);
+
+    if (!token) {
+      return res.status(400).json({ message: "Token is required" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    const user = await Hostel.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    console.log("Password updated successfully");
+
+    return res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.log("Error =>", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 const addNew = async (req, res) => {
   console.log("hostel controller");
   console.log("req.body==>", req.body);
@@ -269,4 +308,5 @@ export default {
   roomsCount,
   bedsCount,
   addNew,
+  updatePassword,
 };

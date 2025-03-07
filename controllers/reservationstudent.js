@@ -5,7 +5,8 @@ import studentcomplaint from "./studentcomplaint.js";
 import StudentReg from "../model/StudentReg.js";
 import messages from "../constants/message.js";
 import Room from "../model/Room.js";
-
+import BlockedRole from "../model/Email_shema.js";
+import { reservationEmailTemplate } from "../Templates/student.js";
 const add = async (req, res) => {
   console.log("In StudentReservation controller");
   console.log("On Hostel Id =>", req.params.id);
@@ -137,6 +138,34 @@ const add = async (req, res) => {
     console.log("New Student Reservation ==========>", newStudentReserve);
 
     await newStudentReserve.save();
+
+    const blockedUser = await BlockedRole.findOne({
+      role: "student",
+      _id: req.params.id,
+    });
+
+    if (!blockedUser) {
+      console.log("work for that think");
+
+      const {
+        studentName,
+        email,
+        roomNumber,
+        startDate,
+        endDate,
+        totalAmount,
+      } = newStudentReserve;
+
+      reservationEmailTemplate(
+        email,
+        studentName,
+        roomNumber,
+        startDate,
+        endDate,
+        totalAmount
+      );
+    }
+
     await Room.updateOne(
       { roomNumber: roomNumber, "bedIDs.bedId": bedId },
       {

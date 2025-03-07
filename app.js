@@ -7,6 +7,7 @@ import path from "path";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { createDefaultSuperadmin } from "./controllers/SuperAdmin.js";
+
 dotenv.config();
 
 const app = express();
@@ -50,4 +51,5 @@ const port = process.env.PORT || "4000";
 app.listen(port, () => {
   console.log(`Server listining    at http://localhost:${port}`);
   createDefaultSuperadmin();
+  // sendMail();
 });
